@@ -1,5 +1,7 @@
 # Money City — HD web version
 
+Live site: https://money-city-sim.github.io/money-city-sim/
+
 The **Sim World** of Money City as a standalone website: a fictional, self-running world of eight countries, with an **HD graphics pack** that loads real 3D assets. This public copy has only the simulation. The personal Real World mode is removed, along with every personal detail in its code.
 
 ## What's in here
@@ -33,7 +35,7 @@ Then open http://localhost:8000. Opening `index.html` straight from the file sys
 1. Create a new repository on GitHub, for example `money-city`.
 2. Upload every file in this folder to the repository root.
 3. Go to **Settings → Pages → Build and deployment** and pick **Deploy from a branch**, `main`, `/ (root)`.
-4. After about a minute the site is live at `https://<your-username>.github.io/money-city/`.
+4. After about a minute the site is live at `https://<owner>.github.io/<repo>/`.
 
 **Vercel or Netlify:** drag this folder onto their dashboard to publish it as a static site.
 
