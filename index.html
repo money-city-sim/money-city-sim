@@ -245,11 +245,11 @@ body[data-mode="sim"] .stage{box-shadow:0 0 0 3px color-mix(in srgb,var(--warn) 
 const LS='money-city-sim-v1';
 const DEF={
   takeHome:2054.11, gross:null,
-  roth:{start:null,monthly:null,shares:null,navAt:null}, k401:{start:null}, years:25, ret:7,
-  ally:{bal:null,goal:null,monthly:null,rate:null},
-  discover:{bal:null,apr:null,pay:null},
-  amex:{bal:null,apr:null,pay:null},
-  mohela:{bal:null,pay:null},
+  invest:{start:null,monthly:null,shares:null,navAt:null}, retire2:{start:null}, years:25, ret:7,
+  savings:{bal:null,goal:null,monthly:null,rate:null},
+  carda:{bal:null,apr:null,pay:null},
+  cardb:{bal:null,apr:null,pay:null},
+  loanb:{bal:null,pay:null},
   tuition:{amt:null,due:''},
   apt:{date:'2027-06-01',goal:null,saved:null},
   subs:['Spotify','iCloud','PlayStation','ChatGPT','Claude'].map(n=>({name:n,amt:null,moved:false}))
@@ -272,23 +272,23 @@ const ago=ms=>{const m=Math.round((Date.now()-ms)/6e4);return m<1?'just now':m<6
 
 const monthlyIn=()=>n(S.takeHome)*26/12;
 const subsSum=()=>S.subs.reduce((a,s)=>a+n(s.amt),0);
-const debtTotal=()=>n(S.discover.bal)+n(S.amex.bal);
-const commitments=()=>[['',n(S.roth.monthly),'var(--good)'],['',n(S.ally.monthly),'var(--teal)'],['Subscriptions',subsSum(),'var(--warn)'],['Debt payments',n(S.discover.pay)+n(S.amex.pay)+n(S.mohela.pay),'var(--bad)']];
+const debtTotal=()=>n(S.carda.bal)+n(S.cardb.bal);
+const commitments=()=>[['',n(S.invest.monthly),'var(--good)'],['',n(S.savings.monthly),'var(--teal)'],['Subscriptions',subsSum(),'var(--warn)'],['Debt payments',n(S.carda.pay)+n(S.cardb.pay)+n(S.loanb.pay),'var(--bad)']];
 function fv(start,pmt,rate,years){const r=rate/100/12,m=years*12;return r?start*Math.pow(1+r,m)+pmt*(Math.pow(1+r,m)-1)/r:start+pmt*m}
 function payoff(bal,apr,pay){if(!bal)return{m:0,int:0};if(!pay)return null;const r=apr/100/12;if(!r)return{m:Math.ceil(bal/pay),int:0};if(pay<=bal*r)return{m:Infinity,int:Infinity};const m=Math.ceil(-Math.log(1-r*bal/pay)/Math.log(1+r));return{m,int:Math.max(0,pay*m-bal)}}
 const k401monthly=()=>S.gross?n(S.gross)*0.10*26/12:0;
-const kOn=()=>!!(S.gross||S.k401.start);
-function retire(){const roth=fv(n(S.roth.start),n(S.roth.monthly),S.ret,S.years);const k=fv(n(S.k401.start),k401monthly(),S.ret,S.years);return{roth,k,total:roth+(kOn()?k:0)}}
-const allyProg=()=>S.ally.goal?Math.min(1,n(S.ally.bal)/S.ally.goal):0;
+const kOn=()=>!!(S.gross||S.retire2.start);
+function retire(){const invest=fv(n(S.invest.start),n(S.invest.monthly),S.ret,S.years);const k=fv(n(S.retire2.start),k401monthly(),S.ret,S.years);return{invest,k,total:invest+(kOn()?k:0)}}
+const allyProg=()=>S.savings.goal?Math.min(1,n(S.savings.bal)/S.savings.goal):0;
 const aptProg=()=>S.apt.goal?Math.min(1,n(S.apt.saved)/S.apt.goal):0;
 
 /* ================= live feeds + builds (shared data) ================= */
 const FEED={news:null,markets:null,sports:null,weather:null};
 const fund=()=>FEED.markets&&FEED.markets.fund&&FEED.markets.fund.nav?FEED.markets.fund:null;
-function setRothShares(){const f=fund();if(S.roth.start==null){S.roth.shares=null;S.roth.navAt=null;return}if(f){S.roth.shares=+(S.roth.start/f.nav).toFixed(4);S.roth.navAt=f.nav}}
-function rothReval(){const f=fund();if(!f)return;if(S.roth.start!=null&&!S.roth.shares){setRothShares();save();return}
-  if(!S.roth.shares||S.roth.navAt===f.nav)return;const prev=n(S.roth.start);S.roth.start=+(S.roth.shares*f.nav).toFixed(2);S.roth.navAt=f.nav;save();
-  const ch=S.roth.start-prev;toast(`${f.nav.toFixed(2)}, ${ch>=0?'+':'−'}${$(Math.abs(ch),2)} → ${$(S.roth.start,2)}`);
+function setRothShares(){const f=fund();if(S.invest.start==null){S.invest.shares=null;S.invest.navAt=null;return}if(f){S.invest.shares=+(S.invest.start/f.nav).toFixed(4);S.invest.navAt=f.nav}}
+function rothReval(){const f=fund();if(!f)return;if(S.invest.start!=null&&!S.invest.shares){setRothShares();save();return}
+  if(!S.invest.shares||S.invest.navAt===f.nav)return;const prev=n(S.invest.start);S.invest.start=+(S.invest.shares*f.nav).toFixed(2);S.invest.navAt=f.nav;save();
+  const ch=S.invest.start-prev;toast(`${f.nav.toFixed(2)}, ${ch>=0?'+':'−'}${$(Math.abs(ch),2)} → ${$(S.invest.start,2)}`);
   if(typeof updateCity==='function')updateCity()}
 const etTime=()=>new Date().toLocaleTimeString('en-US',{timeZone:'America/New_York',hour:'numeric',minute:'2-digit'});
 let BUILDS={},buildsLoaded=false,db=null,dbState='loading';
@@ -312,11 +312,11 @@ const DISTRICTS=[['finance','Finance'],['news','News & Politics'],['sports','Spo
 const PLACES=[
  {id:'jmu',d:'finance',name:'',x:-12,z:-12,k:''},
  {id:'espp',d:'finance',name:'',x:0,z:-12,k:'Stock purchase plan'},
- {id:'ally',d:'finance',name:'',x:12,z:-12,k:'Savings'},
+ {id:'savings',d:'finance',name:'',x:12,z:-12,k:'Savings'},
  {id:'park',d:'finance',name:'Retirement Park',x:-12,z:0,k:'Retirement'},
  {id:'hq',d:'finance',name:'',x:0,z:0,k:'Income'},
  {id:'debt',d:'finance',name:'Debt District',x:12,z:0,k:'Debt'},
- {id:'mohela',d:'finance',name:'',x:-12,z:12,k:'Student loans'},
+ {id:'loanb',d:'finance',name:'',x:-12,z:12,k:'Student loans'},
  {id:'shops',d:'finance',name:'Subscription Row',x:0,z:12,k:'Subscriptions'},
  {id:'apt',d:'finance',name:'Your Building',x:12,z:12,k:'Moving out'},
  {id:'wh',d:'news',name:'The Mansion',x:24,z:-12,k:'Executive branch'},
@@ -359,7 +359,7 @@ function feedWait(what){return `<p class="note">${dbState==='none'?`The ${what} 
 
 function growthChart(){
   const W=320,H=150,P={l:44,r:10,t:10,b:22},yrs=S.years,on=kOn();const pts=[],cps=[];
-  for(let y=0;y<=yrs;y++){pts.push(fv(n(S.roth.start),n(S.roth.monthly),S.ret,y)+(on?fv(n(S.k401.start),k401monthly(),S.ret,y):0));cps.push(n(S.roth.start)+n(S.roth.monthly)*12*y+(on?n(S.k401.start)+k401monthly()*12*y:0))}
+  for(let y=0;y<=yrs;y++){pts.push(fv(n(S.invest.start),n(S.invest.monthly),S.ret,y)+(on?fv(n(S.retire2.start),k401monthly(),S.ret,y):0));cps.push(n(S.invest.start)+n(S.invest.monthly)*12*y+(on?n(S.retire2.start)+k401monthly()*12*y:0))}
   const max=Math.max(...pts,1),X=y=>P.l+(W-P.l-P.r)*y/yrs,Y=v=>P.t+(H-P.t-P.b)*(1-v/max);
   const line=a=>a.map((v,i)=>`${i?'L':'M'}${X(i).toFixed(1)} ${Y(v).toFixed(1)}`).join(' ');
   const short=v=>v>=1e6?'$'+(v/1e6).toFixed(1)+'M':v>=1e3?'$'+Math.round(v/1e3)+'k':'$'+Math.round(v);
@@ -389,7 +389,7 @@ function gamesView(leagues){const s=FEED.sports;if(!s)return feedWait('scores');
    ${!leagues&&(s.headlines||[]).length?`<div class="stat"><span>Headlines</span></div>${facts(s.headlines.map(esc))}`:''}`}
 
 function swppxCard(){const f=fund();if(!f)return `${feedWait('fund')}</div>`;
-  const sh=n(S.roth.shares),val=sh*f.nav,day=f.pct!=null?val*f.pct/(100+f.pct):null;
+  const sh=n(S.invest.shares),val=sh*f.nav,day=f.pct!=null?val*f.pct/(100+f.pct):null;
   return `${pct(f.pct)}</h3>
    <div class="stats">${stat('Price (NAV)','$'+Number(f.nav).toFixed(2))}${stat('As of',esc(f.asOf||''))}${stat('Year to date',f.ytd!=null?(f.ytd>=0?'+':'')+f.ytd+'%'+(f.ytdAsOf?' <small class="stamp">thru '+esc(f.ytdAsOf)+'</small>':''):'—')}${stat('Expense ratio',(f.expense??0.02)+'%')}</div>
    ${sh?`<p class="note">You hold about <b>${sh.toFixed(3)} shares</b>, worth <b>${$(val,2)}</b>.${day!=null?` That day's move: <span class="${day>=0?'up':'dn'}">${day>=0?'+':'−'}${$(Math.abs(day),2)}</span>.`:''} Sterling revalues this every time the fund's price updates.</p>`
@@ -412,19 +412,19 @@ const VIEWS={
    <div class="stat"><span>Where a month already goes</span></div><div class="bar">${c.map(x=>`<div style="width:${(x[1]/m*100).toFixed(2)}%;background:${x[2]}"></div>`).join('')}</div>
    <div class="legend">${c.map(x=>`<div><i style="background:${x[2]}"></i>${x[0]}<em>${x[1]?$(x[1],2):'—'}</em></div>`).join('')}<div><i style="background:var(--line)"></i>Not yet assigned<em>${$(free)}`}},
  park:{body:()=>facts(['','',''])
-   +`<div class="fields">${field('roth.start','')}${field('k401.start','')}${field('roth.monthly','')}${field('gross','',{ph:'optional'})}</div>${range('years','Grow for',5,40,1)}${range('ret','Average return',3,10,.5)}`,
-  out:()=>{const R=retire();return `${swppxCard()}<div class="stat"><span>Park in ${S.years} years</span><div class="big">${$(R.total)}</div></div><div class="stats">${stat('',$(R.roth))}${stat('',kOn()?$(R.k):'add gross pay')}</div>${growthChart()}
+   +`<div class="fields">${field('invest.start','')}${field('retire2.start','')}${field('invest.monthly','')}${field('gross','',{ph:'optional'})}</div>${range('years','Grow for',5,40,1)}${range('ret','Average return',3,10,.5)}`,
+  out:()=>{const R=retire();return `${swppxCard()}<div class="stat"><span>Park in ${S.years} years</span><div class="big">${$(R.total)}</div></div><div class="stats">${stat('',$(R.invest))}${stat('',kOn()?$(R.k):'add gross pay')}</div>${growthChart()}
    <p class="note">The big oak grows with this number. ${kOn()?'':''}</p>`}},
  espp:{body:()=>facts(['','Shares bought quarterly at a 10% discount',''])+`<div class="fields">${field('gross','',{wide:true,ph:'needed for this math'})}</div>`,
   out:()=>{const per=n(S.gross)*.02,q=per*6.5,bonus=q/.9-q,g=!!S.gross;return `<div class="stat"><span>Built-in gain from the discount</span><div class="big">11.1%</div></div>
    <div class="stats">${stat('',g?$(per,2):'—')}${stat('Per quarter',g?$(q):'—')}${stat('Discount value / qtr',g?$(bonus):'—')}${stat('Per year',g?$(bonus*4):'—')}</div><p class="note">Paying 90¢ for each $1 of stock is an 11.1% gain on purchase day. The stock can move after that.</p>`}},
- ally:{body:()=>facts(['','$50 a month on auto','Holds the emergency fund and apartment savings'])+`<div class="fields">${field('ally.bal','Balance now')}${field('ally.goal','Goal')}${field('ally.monthly','Per month')}${field('ally.rate','Rate',{pre:'',suf:'%'})}</div>`,
-  out:()=>{const b=n(S.ally.bal),g=n(S.ally.goal),p=n(S.ally.monthly),r=n(S.ally.rate)/100/12;let m=0,x=b;if(g>b&&(p>0||r>0)){while(x<g&&m<600){x=x*(1+r)+p;m++}}const pc=allyProg()*100;
+ savings:{body:()=>facts(['','$50 a month on auto','Holds the emergency fund and apartment savings'])+`<div class="fields">${field('savings.bal','Balance now')}${field('savings.goal','Goal')}${field('savings.monthly','Per month')}${field('savings.rate','Rate',{pre:'',suf:'%'})}</div>`,
+  out:()=>{const b=n(S.savings.bal),g=n(S.savings.goal),p=n(S.savings.monthly),r=n(S.savings.rate)/100/12;let m=0,x=b;if(g>b&&(p>0||r>0)){while(x<g&&m<600){x=x*(1+r)+p;m++}}const pc=allyProg()*100;
    return `<div class="stat"><span>Toward the goal</span><div class="big">${g?pc.toFixed(0)+'%':'set a goal'}</div></div><div class="bar"><div style="width:${pc}%;background:var(--teal)"></div></div>
-   <div class="stats">${stat('Time to goal',!g?'—':b>=g?'reached':m>=600?'50+ years':months(m))}${stat('Interest this year',$(b*n(S.ally.rate)/100,2))}</div><p class="note">The tower fills up as the balance nears the goal.</p>`}},
+   <div class="stats">${stat('Time to goal',!g?'—':b>=g?'reached':m>=600?'50+ years':months(m))}${stat('Interest this year',$(b*n(S.savings.rate)/100,2))}</div><p class="note">The tower fills up as the balance nears the goal.</p>`}},
  debt:{body:()=>{const card=(k,name,extra)=>`<div class="card"><h3>${name}<span id="pill-${k}"></span></h3><p class="note">${extra}</p><div class="fields">${field(k+'.bal','Balance')}${field(k+'.apr','APR',{pre:'',suf:'%',ph:'0'})}${field(k+'.pay','Monthly payment',{wide:true})}</div><div id="po-${k}"></div></div>`;
-   return facts(['','',''])+card('discover','','Card expires January 2027.')+card('amex','American Express','Priority: the statement balance.')},
-  out:()=>{const d=debtTotal();['discover','amex'].forEach(k=>{const o=S[k],r=payoff(n(o.bal),n(o.apr),n(o.pay));const el=document.getElementById('po-'+k),pill=document.getElementById('pill-'+k);if(!el)return;
+   return facts(['','',''])+card('carda','','Card expires January 2027.')+card('cardb','American Express','Priority: the statement balance.')},
+  out:()=>{const d=debtTotal();['carda','cardb'].forEach(k=>{const o=S[k],r=payoff(n(o.bal),n(o.apr),n(o.pay));const el=document.getElementById('po-'+k),pill=document.getElementById('pill-'+k);if(!el)return;
     pill.innerHTML=!n(o.bal)?(o.bal===0?'<span class="pill good">Paid off</span>':''):r&&r.m!==Infinity?`<span class="pill ${r.m<=6?'good':'warn'}">${months(r.m)}</span>`:'<span class="pill bad">Growing</span>';
     el.innerHTML=!n(o.bal)?'':!r?'<p class="note">Add a monthly payment to see the payoff date.</p>':r.m===Infinity?'<p class="note">This payment only covers interest. Raise it to make progress.</p>':`<p class="note">Clear in ${months(r.m)}${r.int?`, about ${$(r.int)} in interest`:''}.</p>`});
    return `<div class="stat"><span>Known balances</span><div class="big">${$(d)}</div></div><p class="note">Tower height tracks each balance, and smoke means debt is still live. Leave APR at 0 if you pay in full. Blaze can draft a payoff plan.</p>`}},
@@ -439,8 +439,8 @@ const VIEWS={
  jmu:{body:()=>facts(['',''])+`<div class="fields">${field('','Next installment',{ph:'when known'})}${dateField('','Due date')}</div>`,
   out:()=>{const a=n(S.tuition.amt),dd=S.tuition.due?daysTo(S.tuition.due):null,pc=dd?Math.max(1,Math.ceil(dd/14)):null;
    return `<div class="stat"><span>Status</span><div>${a?'<span class="pill warn">Installment coming</span>':'<span class="pill good">Paid through November</span>'}</div></div>${a&&dd!=null?`<div class="stats">${stat('Days until due',Math.max(0,dd))}${stat('',$(a/pc,2))}</div>`:''}<p class="note">Purple and gold, for the Dukes.</p>`}},
- mohela:{body:()=>facts(['','You\'ve been making voluntary payments anyway'])+`<div class="fields">${field('mohela.bal','Balance')}${field('mohela.pay','Voluntary per month')}</div>`,
-  out:()=>{const b=n(S.mohela.bal),p=n(S.mohela.pay);return `<div class="stat"><span>Status</span><div><span class="pill good">Bus parked · deferred</span></div></div><div class="stats">${stat('Paid per year',p?$(p*12):'—')}${stat('Clears in',b&&p?months(Math.ceil(b/p)):'—')}</div>
+ loanb:{body:()=>facts(['','You\'ve been making voluntary payments anyway'])+`<div class="fields">${field('loanb.bal','Balance')}${field('loanb.pay','Voluntary per month')}</div>`,
+  out:()=>{const b=n(S.loanb.bal),p=n(S.loanb.pay);return `<div class="stat"><span>Status</span><div><span class="pill good">Bus parked · deferred</span></div></div><div class="stats">${stat('Paid per year',p?$(p*12):'—')}${stat('Clears in',b&&p?months(Math.ceil(b/p)):'—')}</div>
    <p class="note">Payoff time ignores interest, so the real date runs a little later. Payments made while deferred still cut the principal.</p>`}},
  wh:{body:()=>`<p class="note">Executive-branch and White House stories from the news feed.</p>`,out:()=>newsList(['politics'])},
  capitol:{body:()=>`<p class="note">Congress, the courts and elections.</p>`,out:()=>newsList(['politics'])},
@@ -469,9 +469,9 @@ function crewCard(){const list=Object.values(BUILDS).sort((a,b)=>n(b.startedAt)-
 
 function subline(pid){const R=retire(),d=debtTotal(),dd=daysTo(S.apt.date);const m=FEED.markets,s=FEED.sports;
   const sp=m&&(m.indices||[]).find(i=>/S&P 500/.test(i.name));
-  return{hq:$(monthlyIn())+'/mo',park:$(R.total)+' in '+S.years+'y',espp:'2% · 10% off',ally:S.ally.goal?Math.round(allyProg()*100)+'% to goal':'3.20% APY',
+  return{hq:$(monthlyIn())+'/mo',park:$(R.total)+' in '+S.years+'y',espp:'2% · 10% off',savings:S.savings.goal?Math.round(allyProg()*100)+'% to goal':'3.20% APY',
   debt:d?$(d)+' known':'all clear',shops:subsSum()?$(subsSum(),2)+'/mo':S.subs.filter(x=>x.moved).length+'/'+S.subs.length+' moved',apt:dd>0?dd+' days to move':'move day',
-  jmu:S.tuition.amt?$(S.tuition.amt)+' next':'paid thru Nov',mohela:'deferred',
+  jmu:S.tuition.amt?$(S.tuition.amt)+' next':'paid thru Nov',loanb:'deferred',
   exchange:sp?`S&P ${sp.pct>=0?'▲':'▼'}${Math.abs(sp.pct).toFixed(2)}%`:'markets',newsnet:FEED.news?(FEED.news.items||[]).length+' stories':'news',
   wh:'politics',capitol:'Congress',world:'world',stadium:'NFL',arena:'NBA · NCAA hoops',soccer:(()=>{const s=FEED.sports;const L=s?(s.leagues||[]).filter(l=>/Premier|Champions|La Liga/.test(l.league)):[];const lv=L.reduce((k,l)=>k+(l.games||[]).filter(g=>g.status==='live').length,0);return lv?lv+' live':'EPL · UCL · LaLiga'})(),f1:(FEED.sports&&FEED.sports.f1&&FEED.sports.f1.event)||'Formula 1',college:'NCAA',jumbo:'scores'}[pid]||''}
 
@@ -480,7 +480,7 @@ const AGENTS=[
  {id:'penny',group:'Finance',name:'Penny',role:'',home:'hq',color:'#d9a22e',hex:0xd9a22e,blurb:'',ctx:'finance',
   brief:'',
   quick:[{t:''},{t:''}]},
- {id:'ledger',group:'Finance',name:'Ledger',role:'Bookkeeper',home:'ally',color:'#2f7f90',hex:0x2f7f90,blurb:'Updates the city\'s numbers when you tell it balances in plain words.',ctx:'finance',tools:true,
+ {id:'ledger',group:'Finance',name:'Ledger',role:'Bookkeeper',home:'savings',color:'#2f7f90',hex:0x2f7f90,blurb:'Updates the city\'s numbers when you tell it balances in plain words.',ctx:'finance',tools:true,
   brief:'',
   quick:[{t:'What numbers are still missing?'},{t:'',fill:true},{t:'Spotify is $11.99 and I moved it',fill:true}]},
  {id:'blaze',group:'Finance',name:'Blaze',role:'Debt coach',home:'debt',color:'#c4432c',hex:0xc4432c,blurb:'',ctx:'finance',
@@ -510,26 +510,26 @@ let sampleFn=null,canTools=false,sampleState='loading';
 
 function alerts(){const out=[];const unmoved=S.subs.filter(s=>!s.moved).length,dj=daysTo('2027-01-01');
   if(unmoved)out.push(['bad',`${unmoved} subscription${unmoved>1?'s':''}${dj} days).`]);
-  if(n(S.amex.bal)>0)out.push(['warn',`${$(n(S.amex.bal))} on it. Pay the statement balance.`]);
-  if(S.discover.bal==null)out.push(['warn','']);
-  if(S.ally.bal==null)out.push(['warn','']);
+  if(n(S.cardb.bal)>0)out.push(['warn',`${$(n(S.cardb.bal))} on it. Pay the statement balance.`]);
+  if(S.carda.bal==null)out.push(['warn','']);
+  if(S.savings.bal==null)out.push(['warn','']);
   if(S.tuition.amt&&S.tuition.due){const d=daysTo(S.tuition.due);out.push([d<21?'bad':'warn',`${$(S.tuition.amt)} due in ${d} days.`])}
   const dm=daysTo(S.apt.date);if(dm>0)out.push(['good',`${dm} days.${S.apt.goal?' '+Math.round(aptProg()*100)+'% of the cash saved.':' Set a cash target at Your Building.'}`]);
   if(S.gross==null)out.push(['good','']);
   return out}
 
-const PATHS=['takeHome','gross','roth.start','roth.monthly','k401.start','ally.bal','ally.goal','ally.monthly','ally.rate','discover.bal','discover.apr','discover.pay','amex.bal','amex.apr','amex.pay','mohela.bal','mohela.pay','','apt.goal','apt.saved'];
+const PATHS=['takeHome','gross','invest.start','invest.monthly','retire2.start','savings.bal','savings.goal','savings.monthly','savings.rate','carda.bal','carda.apr','carda.pay','cardb.bal','cardb.apr','cardb.pay','loanb.bal','loanb.pay','','apt.goal','apt.saved'];
 const DATE_PATHS=['apt.date',''];
-const LABEL={takeHome:'',gross:'','roth.start':'','roth.monthly':'','k401.start':'','ally.bal':'','ally.goal':'','ally.monthly':'','ally.rate':'','discover.bal':'','discover.apr':'','discover.pay':'','amex.bal':'','amex.apr':'','amex.pay':'','mohela.bal':'','mohela.pay':'','':'','apt.goal':'','apt.saved':'','apt.date':'','':''};
-function applyChange(path,val,who){const prev=JSON.parse(JSON.stringify(get(path)??null));set(path,val);if(path==='roth.start')setRothShares();save();
+const LABEL={takeHome:'',gross:'','invest.start':'','invest.monthly':'','retire2.start':'','savings.bal':'','savings.goal':'','savings.monthly':'','savings.rate':'','carda.bal':'','carda.apr':'','carda.pay':'','cardb.bal':'','cardb.apr':'','cardb.pay':'','loanb.bal':'','loanb.pay':'','':'','apt.goal':'','apt.saved':'','apt.date':'','':''};
+function applyChange(path,val,who){const prev=JSON.parse(JSON.stringify(get(path)??null));set(path,val);if(path==='invest.start')setRothShares();save();
   const sm=path.match(/^subs\.(\d+)\.amt$/);const lbl=sm?S.subs[+sm[1]].name+' amount':(LABEL[path]||path);
-  toast(`${who} set ${lbl} to ${typeof val==='number'?(path.endsWith('apr')||path==='ally.rate'?val+'%':$(val,2)):val}`,{path,prev});refreshAll()}
+  toast(`${who} set ${lbl} to ${typeof val==='number'?(path.endsWith('apr')||path==='savings.rate'?val+'%':$(val,2)):val}`,{path,prev});refreshAll()}
 function toast(msg,u){const t=document.getElementById('toast'),d=document.createElement('div');const s=document.createElement('span');s.textContent=msg;d.append(s);
   if(u){const b=document.createElement('button');b.textContent='Undo';b.onclick=()=>{set(u.path,u.prev);save();refreshAll();d.remove()};d.append(b)}
   t.append(d);setTimeout(()=>d.remove(),9000);while(t.children.length>3)t.firstChild.remove()}
 
 function financeData(){const R=retire();return JSON.stringify({today:today.toISOString().slice(0,10),FUND:fund(),numbers:S,derived:{monthlyTakeHome:+monthlyIn().toFixed(2),autoCommittedMonthly:commitments().map(c=>({what:c[0],monthly:+c[1].toFixed(2)})),knownDebt:debtTotal(),
-  retirementProjection:{years:S.years,returnPct:S.ret,roth:Math.round(R.roth),k401:kOn()?Math.round(R.k):null},daysToMoveOut:daysTo(S.apt.date),daysToCardAExpiry:daysTo('2027-01-01')},alerts:alerts().map(a=>a[1])})}
+  retirementProjection:{years:S.years,returnPct:S.ret,invest:Math.round(R.invest),retire2:kOn()?Math.round(R.k):null},daysToMoveOut:daysTo(S.apt.date),daysToCardAExpiry:daysTo('2027-01-01')},alerts:alerts().map(a=>a[1])})}
 function contextFor(a){
   if(a.ctx==='news')return `NEWS:\n${JSON.stringify(FEED.news||{note:'feed not loaded'})}\n\nMARKETS:\n${JSON.stringify(FEED.markets||{note:'feed not loaded'})}`;
   if(a.ctx==='sports')return `SPORTS:\n${JSON.stringify(FEED.sports||{note:'feed not loaded'})}`;
@@ -671,7 +671,7 @@ function selectPlace(pid,fly){view.place=pid;view.district=PL[pid].d;if(view.tab
   markSel();if(fly){const p=PL[pid];focusOn({x:p.x,z:p.z})}}
 function markSel(){document.querySelectorAll('.tag[data-p]').forEach(t=>t.classList.toggle('sel',t.dataset.p===view.place))}
 function onInput(e){const el=e.target,k=el.dataset.k;const val=el.type==='checkbox'?el.checked:el.type==='date'?el.value:(el.value===''?null:parseFloat(el.value));
-  set(k,val);if(k==='roth.start')setRothShares();if(el.type==='range')document.getElementById(el.id+'-v').textContent=FMT[k](val);save();paintOut();hud();updateCity()}
+  set(k,val);if(k==='invest.start')setRothShares();if(el.type==='range')document.getElementById(el.id+'-v').textContent=FMT[k](val);save();paintOut();hud();updateCity()}
 function refreshAll(){if(view.tab==='place')renderPane();else if(!busy[view.agent])renderPane();hud();updateCity()}
 function hud(){if(MODE==='sim'){simHud();return}const dd=daysTo(S.apt.date);const sp=FEED.markets&&(FEED.markets.indices||[]).find(i=>/S&P 500/.test(i.name));const fd=fund();const w=FEED.weather;
   document.getElementById('hud').innerHTML=[['',`${etTime()}${w?` · ${Math.round(w.tempF)}° ${esc(w.text||'')}`:''}`],['Take-home',$(monthlyIn())+'/mo'],['Known debt',$(debtTotal())],['',dd>0?dd+' days':'now'],
@@ -902,17 +902,17 @@ function buildCity(){
    const t=ticker(1024,64);t.draw([['','#5df29a']]);t.tex.repeat.set(2,1);
    add(new THREE.Mesh(new THREE.CylinderGeometry(3.75,3.75,1,32,1,true),new THREE.MeshBasicMaterial({map:t.tex,side:THREE.DoubleSide})),g,0,8.7,0,false);lots.espp.tex=t.tex;
    cyl(3,3.4,.6,'concrete2',g,0,8,0,20);cyl(.1,.1,2.5,'dark',g,0,9.2,0,6);lots.espp.top=12.5}
-  {const g=lots.ally.g;box(6,1.4,6,'concrete2',g,0,0,0);const shell=box(4.6,13,4.6,mats.glassT,g,0,1.4,0,false);
-   const fill=add(new THREE.Mesh(new THREE.BoxGeometry(4.2,1,4.2),fillMat),g,0,1.5,0);lots.ally.fill=fill;lots.ally.fillH=.02;
+  {const g=lots.savings.g;box(6,1.4,6,'concrete2',g,0,0,0);const shell=box(4.6,13,4.6,mats.glassT,g,0,1.4,0,false);
+   const fill=add(new THREE.Mesh(new THREE.BoxGeometry(4.2,1,4.2),fillMat),g,0,1.5,0);lots.savings.fill=fill;lots.savings.fillH=.02;
    const edges=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(4.6,13,4.6)),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.5}));edges.position.set(0,7.9,0);g.add(edges);
-   box(5,.6,5,'teal',g,0,14.4,0);lots.ally.top=17}
+   box(5,.6,5,'teal',g,0,14.4,0);lots.savings.top=17}
   {const g=lots.park.g;[[-3,-3],[3,-3.2],[-3.4,3],[3.2,3.2],[0,-3.6],[-3.6,0]].forEach(([x,z],i)=>tree(g,x,z,.75+i%2*.15));
    cyl(1.4,1.6,.4,'concrete2',g,2.5,0,.6,16);cyl(1.1,1.1,.3,'water',g,2.5,.2,.6,16);box(1.4,.3,.4,0x8a5a3a,g,2.6,0,-1.8);person(g,2.4,.3,-1.8,0x3a6fb0);
    lots.park.oak=tree(g,-.6,.2,1.8);lots.park.top=9;
    for(const sx of [-1.3,1.3])cyl(.06,.06,1.6,'dark',g,.6+sx,0,3.8,6);box(3,1.7,.15,'dark',g,.6,1.4,3.8);const ssc=screen(512,288);SCR.swppx=ssc;
    add(new THREE.Mesh(new THREE.PlaneGeometry(2.8,1.55),new THREE.MeshBasicMaterial({map:ssc.tex})),g,.6,2.25,3.88,false)}
   {const g=lots.debt.g;const mk=(x,k)=>{const t=add(new THREE.Mesh(new THREE.BoxGeometry(2.8,1,2.8),mat(k)),g,x,0,0);const b=add(new THREE.Mesh(new THREE.SphereGeometry(.35,10,8),beaconMat),g,x,0,0,false);return{t,b}};
-   lots.debt.disc=mk(-2.1,'orange');lots.debt.amex=mk(2.1,'blue');box(8,.5,1.2,'concrete2',g,0,0,3.6);
+   lots.debt.disc=mk(-2.1,'orange');lots.debt.cardb=mk(2.1,'blue');box(8,.5,1.2,'concrete2',g,0,0,3.6);
    const puffs=[];for(let i=0;i<14;i++){const m=new THREE.MeshStandardMaterial({transparent:true,opacity:0,flatShading:true});smokeMats.push(m);const s=new THREE.Mesh(new THREE.IcosahedronGeometry(.5,0),m);g.add(s);puffs.push({s,m,t:i/14,x:i%2?-2.1:2.1})}lots.debt.puffs=puffs}
   {const g=lots.shops.g;lots.shops.aw=[];[-3.4,-1.7,0,1.7,3.4].forEach((x,i)=>{dollhouseBldg(g,{x,z:-.6,w:1.5,d:3,floors:1,fh:2.2+(i%2)*.4,color:i%2?0xece6da:0xe4d6c8,themeAt:()=>'shop',seed:'s'+i});
     const aw=add(new THREE.Mesh(new THREE.BoxGeometry(1.5,.18,1),new THREE.MeshStandardMaterial({flatShading:true})),g,x,1.8,1.3);aw.rotation.x=.35;lots.shops.aw.push(aw)});lots.shops.top=5}
@@ -924,9 +924,9 @@ function buildCity(){
    dollhouseBldg(g,{x:2.4,z:1.4,w:3,d:4,floors:2,fh:1.5,color:0xc07558,roof:0x5a2a8a,themeAt:i=>i?'library':'classroom',seed:'jmu2'});
    box(1.4,6.5,1.4,'white',g,-2.8,0,2.4);cone(1.1,1.8,'purple',g,-2.8,6.5,2.4,4);
    cyl(.06,.06,4.5,'dark',g,0,0,3.6,6);box(1.4,.8,.05,'purple',g,.7,3.6,3.6);box(1.4,.25,.06,'gold',g,.7,3.4,3.6);lots.jmu.top=9}
-  {const g=lots.mohela.g;dollhouseBldg(g,{z:-1.6,w:7,d:4,floors:1,fh:2.8,color:0xd6cfc2,roof:0x2f8f9f,themeAt:()=>'office',seed:'mo'});
+  {const g=lots.loanb.g;dollhouseBldg(g,{z:-1.6,w:7,d:4,floors:1,fh:2.8,color:0xd6cfc2,roof:0x2f8f9f,themeAt:()=>'office',seed:'mo'});
    box(5.6,.06,.15,'line',g,0,0,2.6,false);const bus=new THREE.Group();bus.position.set(0,0,2.2);g.add(bus);
-   box(4.6,1.6,1.6,'gold',bus,0,.35,0);box(4.62,.5,1.62,'window',bus,0,1.1,0,false);[-1.5,1.5].forEach(x=>[-.8,.8].forEach(z=>{const w=add(new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.25,12),mat('dark')),bus,x,.35,z);w.rotation.x=Math.PI/2}));lots.mohela.top=5.5}
+   box(4.6,1.6,1.6,'gold',bus,0,.35,0);box(4.62,.5,1.62,'window',bus,0,1.1,0,false);[-1.5,1.5].forEach(x=>[-.8,.8].forEach(z=>{const w=add(new THREE.Mesh(new THREE.CylinderGeometry(.35,.35,.25,12),mat('dark')),bus,x,.35,z);w.rotation.x=Math.PI/2}));lots.loanb.top=5.5}
 
   /* ========== NEWS & POLITICS DISTRICT ========== */
   {const g=lots.wh.g;// mansion with portico, lawn, fountain, fence
@@ -1086,7 +1086,7 @@ function buildCity(){
     const lg=l=>sp&&(sp.leagues||[]).find(x=>x.league===l);const gl=x=>`${x.away} ${x.as??''} @ ${x.home} ${x.hs??''}${x.status==='final'?' F':x.status==='live'?' LIVE':' '+(x.when||'')}`;
     const hoops=[...((lg('NBA')||{}).games||[]).map(x=>['NBA '+gl(x)+'   ',x.status==='live'?'#ff8a5e':'#fff6d6']),...((lg('College basketball')||{}).games||[]).map(x=>['NCAA '+gl(x)+'   ',x.status==='live'?'#ff8a5e':'#d9c6ff'])];
     SCR.nba.draw(hoops.length?hoops:[['HOOPS ARENA · ','#fff6d6']],'#1a0f06');
-    {const fd=fund();const sh=n(S.roth.shares);if(fd)SCR.swppx.draw('',[`$${Number(fd.nav).toFixed(2)}  ${fd.pct!=null?(fd.pct>=0?'▲ ':'▼ ')+Math.abs(fd.pct).toFixed(2)+'%':''}`,sh?`${$(sh*fd.nav,2)}`:'','as of '+(fd.asOf||'')],fd.pct==null||fd.pct>=0?'#2f8a55':'#c4432c');else SCR.swppx.draw('',['Waiting for the fund price'],'#2f8a55')}
+    {const fd=fund();const sh=n(S.invest.shares);if(fd)SCR.swppx.draw('',[`$${Number(fd.nav).toFixed(2)}  ${fd.pct!=null?(fd.pct>=0?'▲ ':'▼ ')+Math.abs(fd.pct).toFixed(2)+'%':''}`,sh?`${$(sh*fd.nav,2)}`:'','as of '+(fd.asOf||'')],fd.pct==null||fd.pct>=0?'#2f8a55':'#c4432c');else SCR.swppx.draw('',['Waiting for the fund price'],'#2f8a55')}
     drawCycle()};
   function drawCycle(){const nw=FEED.news,sp=FEED.sports;const items=nw?(nw.items||[]):[];
     if(items.length){const it=items[cyc%items.length];SCR.news.draw((it.cat==='politics'?'POLITICS':'WORLD')+' · LIVE',[it.headline,it.summary],'#b3261e')}else SCR.news.draw('MONEY CITY NEWS',['Waiting for the news wire.']);
@@ -1130,13 +1130,13 @@ function buildCity(){
 
   /* --- updates from finance data --- */
   updateCity=()=>{const Rr=retire();lots.park.oak.scale.setScalar(Math.max(1.1,Math.min(3.2,1.1+(Math.log10(Rr.total+1)-3)*.75)));
-    lots.ally.fillTarget=Math.max(.02,(S.ally.goal?allyProg():(S.ally.bal?.15:.04)))*12.8;
+    lots.savings.fillTarget=Math.max(.02,(S.savings.goal?allyProg():(S.savings.bal?.15:.04)))*12.8;
     const dh=b=>b==null?3:b<=0?.6:Math.min(15,1.2+b/120);
-    [['disc',S.discover.bal],['amex',S.amex.bal]].forEach(([k,b])=>{const o=lots.debt[k];o.target=dh(b);o.live=n(b)>0||b==null;o.t.material=mat(n(b)<=0&&b!=null?'green':k==='disc'?'orange':'blue')});
+    [['disc',S.carda.bal],['cardb',S.cardb.bal]].forEach(([k,b])=>{const o=lots.debt[k];o.target=dh(b);o.live=n(b)>0||b==null;o.t.material=mat(n(b)<=0&&b!=null?'green':k==='disc'?'orange':'blue')});
     const p=PAL[SUNF>.5?'day':'night'];S.subs.slice(0,5).forEach((s,i)=>lots.shops.aw[i].material.color.setHex(s.moved?p.green:p.awning));
     const furnished=S.apt.goal?Math.round(aptProg()*8):1;lots.apt.b.floors.forEach((f,i)=>{const on=i<Math.max(1,furnished);f.g.visible=on;f.walls.forEach(w=>w.on=on);lots.apt.sc[i].visible=!on});
-    lots.apt.b.roof.visible=furnished>=8;lots.debt.top=Math.max(lots.debt.disc.target,lots.debt.amex.target)+3;agentsGo()};
-  lots.debt.disc.target=lots.debt.amex.target=3;
+    lots.apt.b.roof.visible=furnished>=8;lots.debt.top=Math.max(lots.debt.disc.target,lots.debt.cardb.target)+3;agentsGo()};
+  lots.debt.disc.target=lots.debt.cardb.target=3;
 
   /* --- camera focus & picking --- */
   let tweenTarget=null,tweenCam=null;focusOn=v=>{if(!v)return;const off=camera.position.clone().sub(controls.target);if(off.length()>55)off.setLength(48);const T=new THREE.Vector3(v.x,2,v.z);if(RM){controls.target.copy(T);camera.position.copy(T).add(off);return}tweenTarget=T;tweenCam=T.clone().add(off);controls.autoRotate=false};
@@ -1172,10 +1172,10 @@ function buildCity(){
     if(!RM){lots.hq.coin.rotation.z+=dt*1.6;lots.espp.tex.offset.x-=dt*.06;lots.apt.arm.rotation.y=Math.sin(t*.25)*.9;SCR.mkt.tex.offset.x+=dt*.025;SCR.crawl.tex.offset.x+=dt*.05;SCR.world.tex.offset.x-=dt*.03;SCR.nba.tex.offset.x-=dt*.04;lots.world.globe.rotation.y+=dt*.15;
       lots.f1.anim(dt);
       for(const id in buildObjs){const o=buildObjs[id];if(o.crane.visible)o.arm.rotation.y=Math.sin(t*.4+o.g.id)*1.1;if(o.anim&&o.shown>=o.floors.length)o.anim(t,dt)}}
-    const a=lots.ally;a.fillH+=(a.fillTarget-a.fillH)*(1-Math.exp(-dt*3));a.fill.scale.y=a.fillH;a.fill.position.y=1.5+a.fillH/2;
-    ['disc','amex'].forEach(k=>{const o=lots.debt[k];o.h=(o.h??o.target)+(o.target-(o.h??o.target))*(1-Math.exp(-dt*3));o.t.scale.y=o.h;o.t.position.y=.25+o.h/2;o.b.position.y=.25+o.h+.35;o.b.visible=o.live;o.b.scale.setScalar(1+.25*Math.sin(t*4))});
+    const a=lots.savings;a.fillH+=(a.fillTarget-a.fillH)*(1-Math.exp(-dt*3));a.fill.scale.y=a.fillH;a.fill.position.y=1.5+a.fillH/2;
+    ['disc','cardb'].forEach(k=>{const o=lots.debt[k];o.h=(o.h??o.target)+(o.target-(o.h??o.target))*(1-Math.exp(-dt*3));o.t.scale.y=o.h;o.t.position.y=.25+o.h/2;o.b.position.y=.25+o.h+.35;o.b.visible=o.live;o.b.scale.setScalar(1+.25*Math.sin(t*4))});
     weatherFrame(dt,t);
-    lots.debt.puffs.forEach(p=>{const tw=lots.debt[p.x<0?'disc':'amex'];if(!tw.live||RM){p.m.opacity=0;return}p.t=(p.t+dt*.28)%1;p.s.position.set(p.x+Math.sin(p.t*6+p.x)*.4,.25+tw.h+.4+p.t*5,Math.cos(p.t*5)*.3);p.s.scale.setScalar(.5+p.t*1.6);p.m.opacity=.55*(1-p.t)});
+    lots.debt.puffs.forEach(p=>{const tw=lots.debt[p.x<0?'disc':'cardb'];if(!tw.live||RM){p.m.opacity=0;return}p.t=(p.t+dt*.28)%1;p.s.position.set(p.x+Math.sin(p.t*6+p.x)*.4,.25+tw.h+.4+p.t*5,Math.cos(p.t*5)*.3);p.s.scale.setScalar(.5+p.t*1.6);p.m.opacity=.55*(1-p.t)});
     // dollhouse: hide walls that face the camera
     cpos.copy(camera.position);
     for(const w of WALLS){if(!w.c){w.c=new THREE.Vector3();w.m.getWorldPosition(w.c)}if(!w.on){continue}w.m.visible=!(dollhouse&&tmp.subVectors(cpos,w.c).dot(w.n)>0)}
